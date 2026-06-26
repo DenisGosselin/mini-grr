@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini Grr - Pocket Bass Lab</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1010;
+      --wood: #3a2418;
+      --panel: #191b1b;
+      --panel-hi: #242726;
+      --ink: #fff4dc;
+      --muted: #b8aa91;
+      --line: #3a342c;
+      --black: #080909;
+      --amber: #ffbd45;
+      --orange: #e9692c;
+      --red: #ef5048;
+      --blue: #58b7ff;
+      --green: #78d47a;
+      --shadow: 0 20px 42px rgba(0, 0, 0, .38);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(255,189,69,.04) 1px, transparent 1px) 0 0 / 18px 18px,
+        radial-gradient(circle at 50% -10%, rgba(255,189,69,.16), transparent 38%),
+        linear-gradient(135deg, #111414, #090a0a 62%, #15100d);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    button, input, textarea { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    .app {
+      width: min(1040px, 100%);
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .shell {
+      border: 2px solid #070707;
+      border-radius: 12px;
+      background:
+        linear-gradient(90deg, var(--wood), transparent 20px, transparent calc(100% - 20px), var(--wood)),
+        linear-gradient(180deg, #2a2e2d, var(--panel) 92%);
+      box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.08);
+      padding: 14px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 2px 0 14px;
+      border-bottom: 1px solid rgba(255, 189, 69, .22);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .badge {
+      width: 58px;
+      height: 58px;
+      border: 3px solid #050505;
+      border-radius: 10px;
+      background:
+        radial-gradient(circle at 31% 38%, #090909 0 4px, transparent 5px),
+        radial-gradient(circle at 69% 38%, #090909 0 4px, transparent 5px),
+        linear-gradient(#090909 0 0) 50% 70% / 24px 5px no-repeat,
+        linear-gradient(145deg, #ffd474, var(--amber) 48%, var(--orange));
+      box-shadow: inset 0 -9px rgba(0,0,0,.2), 0 8px 0 rgba(0,0,0,.28);
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 8vw, 4.3rem);
+      line-height: .85;
+      letter-spacing: 0;
+    }
+
+    .tagline {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: .95rem;
+      font-weight: 700;
+    }
+
+    .status {
+      min-width: 98px;
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #101211;
+      color: var(--muted);
+      text-align: center;
+      font-size: .76rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .status.hot { color: #17110a; background: var(--amber); border-color: var(--amber); }
+    .status.rec { color: #fff; background: var(--red); border-color: var(--red); }
+    .status.play { color: #071018; background: var(--blue); border-color: var(--blue); }
+
+    main {
+      display: grid;
+      gap: 14px;
+      padding-top: 14px;
+    }
+
+    .wake {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 2px solid #070707;
+      border-radius: 10px;
+      background:
+        linear-gradient(90deg, rgba(255,189,69,.12), transparent 58%),
+        #151817;
+      box-shadow: inset 0 1px rgba(255,255,255,.06);
+    }
+
+    .wake button {
+      min-height: 64px;
+      border: 2px solid #050505;
+      border-radius: 10px;
+      color: #160f08;
+      background: linear-gradient(180deg, #ffe199, var(--amber) 48%, var(--orange));
+      font-size: clamp(1rem, 4.5vw, 1.35rem);
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: inset 0 -6px rgba(0,0,0,.18), 0 8px 0 rgba(0,0,0,.28);
+      transition: transform .1s ease, box-shadow .1s ease, filter .1s ease;
+    }
+
+    .wake button:active {
+      transform: translateY(6px);
+      box-shadow: inset 0 -3px rgba(0,0,0,.18), 0 2px 0 rgba(0,0,0,.28);
+      filter: brightness(1.04);
+    }
+
+    .wake button.awake {
+      color: var(--ink);
+      background: #202524;
+      border-color: var(--amber);
+      box-shadow: inset 0 0 0 2px rgba(255,189,69,.16);
+    }
+
+    .wake p {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .instrument {
+      display: grid;
+      gap: 14px;
+    }
+
+    .module {
+      border: 2px solid #070707;
+      border-radius: 10px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.055), transparent 38%),
+        var(--panel-hi);
+      box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 24px rgba(0,0,0,.24);
+      padding: 12px;
+    }
+
+    .module-title {
+      margin: 0 0 10px;
+      color: var(--amber);
+      font-size: .76rem;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .preset, .transport button, .exporter button {
+      min-height: 46px;
+      border: 1px solid #494136;
+      border-radius: 8px;
+      color: var(--ink);
+      background: #181b1a;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: inset 0 -4px rgba(0,0,0,.22);
+      transition: transform .1s ease, background .12s ease, border-color .12s ease;
+    }
+
+    .preset.active {
+      color: #12110b;
+      border-color: var(--green);
+      background: var(--green);
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 82px 1fr 46px;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: .9rem;
+      font-weight: 900;
+    }
+
+    .control span {
+      color: var(--ink);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-size: .8rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--amber);
+    }
+
+    .pads {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .pad {
+      position: relative;
+      min-height: 112px;
+      border: 2px solid #050505;
+      border-radius: 10px;
+      color: #111;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.42), transparent 40%),
+        var(--pad-color, var(--amber));
+      cursor: pointer;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      box-shadow: inset 0 -11px rgba(0,0,0,.18), 0 10px 0 rgba(0,0,0,.28), 0 18px 22px rgba(0,0,0,.18);
+      transform-origin: center bottom;
+      transition: transform .08s ease, box-shadow .08s ease, filter .08s ease;
+      overflow: hidden;
+    }
+
+    .pad:active, .pad.held, .pad.playing {
+      transform: translateY(7px) scale(1.016);
+      box-shadow: inset 0 -5px rgba(0,0,0,.18), 0 3px 0 rgba(0,0,0,.28), 0 10px 16px rgba(0,0,0,.18);
+      filter: brightness(1.08);
+    }
+
+    .pad .note {
+      display: block;
+      padding: 14px 13px 2px;
+      font-size: clamp(1.9rem, 9vw, 3rem);
+      font-weight: 1000;
+      line-height: 1;
+    }
+
+    .pad .freq {
+      display: block;
+      padding: 3px 13px;
+      font-size: .76rem;
+      font-weight: 900;
+      opacity: .7;
+    }
+
+    .pad .slot {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      width: 38px;
+      height: 24px;
+      border-radius: 4px;
+      background:
+        repeating-linear-gradient(90deg, rgba(0,0,0,.36) 0 3px, transparent 3px 7px),
+        rgba(255,255,255,.2);
+    }
+
+    .transport {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .transport button {
+      min-height: 60px;
+      font-size: 1rem;
+    }
+
+    .transport button.active.rec { background: var(--red); border-color: var(--red); color: #fff; }
+    .transport button.active.play { background: var(--blue); border-color: var(--blue); color: #071018; }
+
+    .meters {
+      height: 70px;
+      border: 2px solid #070707;
+      border-radius: 10px;
+      background: #0c0e0e;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .exporter {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .exporter button {
+      min-height: 52px;
+    }
+
+    .exporter .primary {
+      color: #17110a;
+      background: var(--amber);
+      border-color: var(--amber);
+    }
+
+    .readout {
+      grid-column: 1 / -1;
+      min-height: 46px;
+      padding: 10px;
+      border: 1px solid #494136;
+      border-radius: 8px;
+      color: var(--muted);
+      background: #101211;
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .placText {
+      grid-column: 1 / -1;
+      display: none;
+      width: 100%;
+      min-height: 170px;
+      padding: 10px;
+      border: 1px solid #494136;
+      border-radius: 8px;
+      color: var(--ink);
+      background: #0c0e0e;
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+      resize: vertical;
+    }
+
+    @media (min-width: 720px) {
+      .app { padding: 24px; }
+      .shell { padding: 18px; }
+      .wake { grid-template-columns: 260px 1fr; align-items: center; }
+      .instrument { grid-template-columns: 310px 1fr; align-items: start; }
+      .pads { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .pad { min-height: 140px; }
+      .transport, .meters, .exporter { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <header>
+        <div class="brand">
+          <div class="badge" aria-hidden="true"></div>
+          <div>
+            <h1>Mini Grr</h1>
+            <p class="tagline">Pocket Bass Lab</p>
+          </div>
+        </div>
+        <div id="status" class="status">asleep</div>
+      </header>
+
+      <main>
+        <section class="wake" aria-label="Wake">
+          <button id="wakeBtn" type="button">Wake the Grr</button>
+          <p>Simple. Small. Share. Hold a pad, catch a riff, export a tiny .PLAC.</p>
+        </section>
+
+        <section class="instrument" aria-label="Instrument">
+          <section class="module" aria-label="Presets">
+            <p class="module-title">Sound</p>
+            <div id="presets" class="presets"></div>
+          </section>
+
+          <section id="pads" class="pads" aria-label="Bass pads"></section>
+
+          <section class="module" aria-label="Controls">
+            <p class="module-title">Shape</p>
+            <div class="controls">
+              <label class="control">Sustain <input id="sustain" type="range" min="80" max="1400" value="420"> <span id="sustainValue">420</span></label>
+              <label class="control">Cutoff <input id="cutoff" type="range" min="180" max="4200" value="950"> <span id="cutoffValue">950</span></label>
+              <label class="control">Drive <input id="drive" type="range" min="0" max="100" value="32"> <span id="driveValue">32</span></label>
+            </div>
+          </section>
+
+          <section class="module transport" aria-label="Transport">
+            <button id="recBtn" class="rec" type="button">REC</button>
+            <button id="playBtn" class="play" type="button">PLAY</button>
+            <button id="clearBtn" type="button">CLEAR</button>
+          </section>
+
+          <section class="meters" aria-label="Meter">
+            <canvas id="scope" width="900" height="160"></canvas>
+          </section>
+
+          <section class="module exporter" aria-label="Export">
+            <button id="exportBtn" class="primary" type="button">EXPORT .PLAC</button>
+            <button id="copyBtn" type="button">Copy .PLAC Text</button>
+            <div id="readout" class="readout">No riff yet.</div>
+            <textarea id="placText" class="placText" readonly></textarea>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const notes = [
+      ["C2", 65.41, "#ffbd45"], ["D2", 73.42, "#78d47a"],
+      ["Eb2", 77.78, "#58b7ff"], ["F2", 87.31, "#ff8b55"],
+      ["G2", 98.00, "#b884ff"], ["A2", 110.00, "#f0719d"],
+      ["Bb2", 116.54, "#8be3c7"], ["C3", 130.81, "#ffd760"]
+    ];
+
+    const presets = [
+      { name: "Round", type: "sine", sustain: 520, cutoff: 900, drive: 18 },
+      { name: "Rubber", type: "triangle", sustain: 360, cutoff: 1150, drive: 34 },
+      { name: "Growl", type: "sawtooth", sustain: 460, cutoff: 720, drive: 58 },
+      { name: "Sub", type: "sine", sustain: 820, cutoff: 520, drive: 26 },
+      { name: "Pick", type: "square", sustain: 180, cutoff: 1800, drive: 44 },
+      { name: "Fuzz", type: "sawtooth", sustain: 620, cutoff: 1550, drive: 86 }
+    ];
+
+    const state = {
+      audio: null,
+      master: null,
+      analyser: null,
+      presetIndex: 0,
+      recording: false,
+      playing: false,
+      wakePlayed: false,
+      armedAt: 0,
+      events: [],
+      pressedKeys: new Set(),
+      activeVoices: new Map(),
+      activeRecords: new Map(),
+      lastPlac: "",
+      audioFailed: false
+    };
+
+    const el = (id) => document.getElementById(id);
+    const statusEl = el("status");
+    const sustainEl = el("sustain");
+    const cutoffEl = el("cutoff");
+    const driveEl = el("drive");
+    const readoutEl = el("readout");
+    const placTextEl = el("placText");
+    const canvas = el("scope");
+    const ctx2d = canvas.getContext("2d");
+
+    function setStatus(text, mode) {
+      statusEl.textContent = text;
+      statusEl.className = "status" + (mode ? " " + mode : "");
+    }
+
+    function ensureAudio() {
+      if (state.audio || state.audioFailed) return !!state.audio;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audio = new AudioContext();
+        state.master = state.audio.createGain();
+        state.analyser = state.audio.createAnalyser();
+        state.master.gain.value = 0.78;
+        state.analyser.fftSize = 256;
+        state.master.connect(state.analyser);
+        state.analyser.connect(state.audio.destination);
+        drawScope();
+        return true;
+      } catch (error) {
+        state.audioFailed = true;
+        readoutEl.textContent = "Audio unavailable, but .PLAC recording still works.";
+        return false;
+      }
+    }
+
+    function resumeAudio() {
+      if (!ensureAudio()) return Promise.resolve(false);
+      if (state.audio.state === "suspended") {
+        return state.audio.resume().then(() => true).catch(() => false);
+      }
+      return Promise.resolve(true);
+    }
+
+    function wake() {
+      const wakeBtn = el("wakeBtn");
+      wakeBtn.textContent = "🐻 Grr Awake";
+      wakeBtn.classList.add("awake");
+      if (!state.recording && !state.playing) setStatus("awake", "hot");
+      return resumeAudio().then((ok) => {
+        if (ok && !state.wakePlayed) {
+          state.wakePlayed = true;
+          wakeGrowl();
+        }
+        return ok;
+      });
+    }
+
+    function wakeGrowl() {
+      if (!state.audio) return;
+      const now = state.audio.currentTime;
+      const oscA = state.audio.createOscillator();
+      const oscB = state.audio.createOscillator();
+      const filter = state.audio.createBiquadFilter();
+      const shaper = state.audio.createWaveShaper();
+      const gain = state.audio.createGain();
+      const tail = state.audio.createOscillator();
+      const tailGain = state.audio.createGain();
+
+      oscA.type = "sawtooth";
+      oscB.type = "triangle";
+      tail.type = "sine";
+      oscA.detune.setValueAtTime(-9, now);
+      oscB.detune.setValueAtTime(11, now);
+      oscA.frequency.setValueAtTime(210, now);
+      oscB.frequency.setValueAtTime(216, now);
+      oscA.frequency.exponentialRampToValueAtTime(54, now + .78);
+      oscB.frequency.exponentialRampToValueAtTime(49, now + .84);
+      tail.frequency.setValueAtTime(52, now + .48);
+      tail.frequency.exponentialRampToValueAtTime(30, now + 1.08);
+
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(320, now);
+      filter.frequency.exponentialRampToValueAtTime(2800, now + .18);
+      filter.frequency.exponentialRampToValueAtTime(190, now + .96);
+      filter.Q.setValueAtTime(9, now);
+      shaper.curve = driveCurve(.38);
+      shaper.oversample = "2x";
+
+      gain.gain.setValueAtTime(.001, now);
+      gain.gain.exponentialRampToValueAtTime(.82, now + .04);
+      gain.gain.setValueAtTime(.7, now + .28);
+      gain.gain.exponentialRampToValueAtTime(.001, now + 1.08);
+      tailGain.gain.setValueAtTime(.001, now + .46);
+      tailGain.gain.exponentialRampToValueAtTime(.36, now + .58);
+      tailGain.gain.exponentialRampToValueAtTime(.001, now + 1.16);
+
+      oscA.connect(shaper);
+      oscB.connect(shaper);
+      shaper.connect(filter).connect(gain).connect(state.master);
+      tail.connect(tailGain).connect(state.master);
+      oscA.start(now);
+      oscB.start(now);
+      tail.start(now + .46);
+      oscA.stop(now + 1.12);
+      oscB.stop(now + 1.12);
+      tail.stop(now + 1.18);
+    }
+
+    function startPad(index, key, fromPlayback = false, duration = 0) {
+      if (state.activeVoices.has(key)) return;
+      const note = notes[index];
+      if (!note) return;
+      const startedAt = performance.now();
+      state.pressedKeys.add(key);
+
+      wake().then(() => {
+        if (!state.pressedKeys.has(key)) return;
+        const voice = createVoice(index);
+        if (voice) state.activeVoices.set(key, voice);
+        const pad = document.querySelector(`[data-pad="${index}"]`);
+        if (pad) pad.classList.add(fromPlayback ? "playing" : "held");
+      });
+
+      if (state.recording && !fromPlayback) {
+        state.activeRecords.set(key, {
+          time: Math.round(startedAt - state.armedAt),
+          note: note[0],
+          freq: note[1],
+          startedAt
+        });
+      }
+
+      if (fromPlayback && duration > 0) {
+        window.setTimeout(() => stopPad(index, key, true), duration);
+      }
+    }
+
+    function createVoice(index) {
+      if (!state.audio) return null;
+      const note = notes[index];
+      const preset = presets[state.presetIndex];
+      const now = state.audio.currentTime;
+      const amount = Number(driveEl.value) / 100;
+      const filterMax = Number(cutoffEl.value);
+      const osc = state.audio.createOscillator();
+      const sub = state.audio.createOscillator();
+      const shaper = state.audio.createWaveShaper();
+      const filter = state.audio.createBiquadFilter();
+      const gain = state.audio.createGain();
+
+      osc.type = preset.type;
+      sub.type = "sine";
+      osc.frequency.value = note[1];
+      sub.frequency.value = note[1] / 2;
+      shaper.curve = driveCurve(amount);
+      shaper.oversample = "2x";
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(Math.min(filterMax * 1.8, 5000), now);
+      filter.frequency.exponentialRampToValueAtTime(Math.max(120, filterMax), now + .12);
+      filter.Q.value = 6 + amount * 9;
+      gain.gain.setValueAtTime(.001, now);
+      gain.gain.exponentialRampToValueAtTime(.82, now + .018);
+      gain.gain.exponentialRampToValueAtTime(.42, now + .18);
+
+      osc.connect(shaper);
+      sub.connect(shaper);
+      shaper.connect(filter).connect(gain).connect(state.master);
+      osc.start(now);
+      sub.start(now);
+      return { osc, sub, gain, filter, index, stopped: false };
+    }
+
+    function stopPad(index, key, fromPlayback = false) {
+      state.pressedKeys.delete(key);
+      const voice = state.activeVoices.get(key);
+      if (voice && !voice.stopped && state.audio) {
+        const now = state.audio.currentTime;
+        const release = Math.max(.07, Math.min(.38, Number(sustainEl.value) / 4200));
+        voice.stopped = true;
+        voice.gain.gain.cancelScheduledValues(now);
+        voice.gain.gain.setTargetAtTime(.001, now, release / 3);
+        try {
+          voice.osc.stop(now + release + .06);
+          voice.sub.stop(now + release + .06);
+        } catch (error) {}
+        state.activeVoices.delete(key);
+      }
+
+      const pad = document.querySelector(`[data-pad="${index}"]`);
+      if (pad) {
+        pad.classList.remove(fromPlayback ? "playing" : "held");
+        if (!fromPlayback) {
+          pad.classList.add("playing");
+          window.setTimeout(() => pad.classList.remove("playing"), 120);
+        }
+      }
+
+      const rec = state.activeRecords.get(key);
+      if (rec && !fromPlayback) {
+        const duration = Math.max(40, Math.round(performance.now() - rec.startedAt));
+        state.events.push({
+          time: rec.time,
+          note: rec.note,
+          freq: rec.freq,
+          duration
+        });
+        state.activeRecords.delete(key);
+        updatePlac();
+      }
+    }
+
+    function driveCurve(amount) {
+      const samples = 256;
+      const curve = new Float32Array(samples);
+      const k = 1 + amount * 80;
+      for (let i = 0; i < samples; i++) {
+        const x = i * 2 / samples - 1;
+        curve[i] = (1 + k) * x / (1 + k * Math.abs(x));
+      }
+      return curve;
+    }
+
+    function applyPreset(index) {
+      state.presetIndex = index;
+      const preset = presets[index];
+      sustainEl.value = preset.sustain;
+      cutoffEl.value = preset.cutoff;
+      driveEl.value = preset.drive;
+      syncValues();
+      document.querySelectorAll(".preset").forEach((btn, i) => btn.classList.toggle("active", i === index));
+      updatePlac(false);
+    }
+
+    function syncValues() {
+      el("sustainValue").textContent = sustainEl.value;
+      el("cutoffValue").textContent = cutoffEl.value;
+      el("driveValue").textContent = driveEl.value;
+    }
+
+    function toggleRec() {
+      wake();
+      state.recording = !state.recording;
+      el("recBtn").classList.toggle("active", state.recording);
+      if (state.recording) {
+        state.events = [];
+        state.activeRecords.clear();
+        state.armedAt = performance.now();
+        setStatus("rec", "rec");
+      } else {
+        finishOpenRecords();
+        setStatus("awake", "hot");
+      }
+      updatePlac();
+    }
+
+    function finishOpenRecords() {
+      state.activeRecords.forEach((rec, key) => {
+        const duration = Math.max(40, Math.round(performance.now() - rec.startedAt));
+        state.events.push({ time: rec.time, note: rec.note, freq: rec.freq, duration });
+        state.activeRecords.delete(key);
+      });
+    }
+
+    function playRecording() {
+      wake().then(() => {
+        const events = normalizedEvents();
+        if (!events.length || state.playing) return;
+        state.playing = true;
+        el("playBtn").classList.add("active");
+        setStatus("play", "play");
+        let endAt = 0;
+        events.forEach((event, i) => {
+          const index = notes.findIndex((note) => note[0] === event.note);
+          const key = `play-${i}-${Date.now()}`;
+          window.setTimeout(() => startPad(index, key, true, event.duration), event.time);
+          endAt = Math.max(endAt, event.time + event.duration);
+        });
+        window.setTimeout(() => {
+          state.playing = false;
+          el("playBtn").classList.remove("active");
+          setStatus(state.recording ? "rec" : "awake", state.recording ? "rec" : "hot");
+        }, endAt + 220);
+      });
+    }
+
+    function clearRecording() {
+      state.events = [];
+      state.activeRecords.clear();
+      state.recording = false;
+      el("recBtn").classList.remove("active");
+      setStatus(state.wakePlayed ? "awake" : "asleep", state.wakePlayed ? "hot" : "");
+      updatePlac();
+    }
+
+    function normalizedEvents() {
+      const events = state.events.slice().sort((a, b) => a.time - b.time);
+      const firstTime = events.length ? events[0].time : 0;
+      return events.map((event) => ({
+        time: Math.max(0, event.time - firstTime),
+        note: event.note,
+        freq: event.freq,
+        duration: event.duration
+      }));
+    }
+
+    function makePlac() {
+      const preset = presets[state.presetIndex];
+      const lines = [
+        "PLAC",
+        "version=1",
+        "app=Mini Grr",
+        "project=Pocket Bass Lab",
+        "tempo=free",
+        `preset=${preset.name}`,
+        `sustain=${Number(sustainEl.value)}`,
+        `cutoff=${Number(cutoffEl.value)}`,
+        `drive=${Number(driveEl.value)}`,
+        "",
+        "[events]"
+      ];
+      normalizedEvents().forEach((event, i) => {
+        lines.push(`${i} time=${event.time} note=${event.note} freq=${event.freq.toFixed(2)} duration=${event.duration}`);
+      });
+      return lines.join("\n");
+    }
+
+    function updatePlac(hideText = true) {
+      state.lastPlac = makePlac();
+      const count = state.events.length;
+      if (hideText) placTextEl.style.display = "none";
+      readoutEl.textContent = count ? `${count} note${count > 1 ? "s" : ""} in the .PLAC.` : "No riff yet.";
+    }
+
+    function showPlacMessage(message) {
+      state.lastPlac = makePlac();
+      placTextEl.value = state.lastPlac;
+      placTextEl.style.display = "block";
+      placTextEl.focus();
+      placTextEl.select();
+      readoutEl.textContent = message;
+    }
+
+    function exportPlac() {
+      state.lastPlac = makePlac();
+      try {
+        const blob = new Blob([state.lastPlac], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "mini-grr.plac";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.setTimeout(() => URL.revokeObjectURL(url), 500);
+        readoutEl.textContent = "mini-grr.plac exported.";
+      } catch (error) {
+        showPlacMessage("Copy this text and send it.");
+      }
+    }
+
+    async function copyPlac() {
+      state.lastPlac = makePlac();
+      try {
+        await navigator.clipboard.writeText(state.lastPlac);
+        placTextEl.style.display = "none";
+        readoutEl.textContent = ".PLAC text copied.";
+      } catch (error) {
+        showPlacMessage("Copy this text and send it.");
+      }
+    }
+
+    function drawScope() {
+      requestAnimationFrame(drawScope);
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx2d.clearRect(0, 0, width, height);
+      ctx2d.fillStyle = "#0c0e0e";
+      ctx2d.fillRect(0, 0, width, height);
+      ctx2d.strokeStyle = "#2a2520";
+      ctx2d.lineWidth = 1;
+      for (let x = 0; x < width; x += 48) {
+        ctx2d.beginPath();
+        ctx2d.moveTo(x, 0);
+        ctx2d.lineTo(x, height);
+        ctx2d.stroke();
+      }
+      if (!state.analyser) return;
+      const data = new Uint8Array(state.analyser.frequencyBinCount);
+      state.analyser.getByteFrequencyData(data);
+      const bar = width / data.length;
+      for (let i = 0; i < data.length; i++) {
+        const h = data[i] / 255 * height;
+        ctx2d.fillStyle = i % 2 ? "#ffbd45" : "#e9692c";
+        ctx2d.fillRect(i * bar, height - h, Math.max(2, bar - 2), h);
+      }
+    }
+
+    function addPadHandlers(button, index) {
+      const start = (event) => {
+        event.preventDefault();
+        const key = event.pointerId ? `pointer-${event.pointerId}` : `pad-${index}`;
+        if (button.setPointerCapture && event.pointerId) button.setPointerCapture(event.pointerId);
+        button.dataset.activeKey = key;
+        startPad(index, key, false);
+      };
+      const stop = (event) => {
+        event.preventDefault();
+        const key = button.dataset.activeKey || (event.pointerId ? `pointer-${event.pointerId}` : `pad-${index}`);
+        stopPad(index, key, false);
+        delete button.dataset.activeKey;
+      };
+
+      if (window.PointerEvent) {
+        button.addEventListener("pointerdown", start);
+        button.addEventListener("pointerup", stop);
+        button.addEventListener("pointercancel", stop);
+        button.addEventListener("lostpointercapture", stop);
+      } else {
+        button.addEventListener("mousedown", start);
+        window.addEventListener("mouseup", stop);
+        button.addEventListener("touchstart", start, { passive: false });
+        button.addEventListener("touchend", stop, { passive: false });
+        button.addEventListener("touchcancel", stop, { passive: false });
+      }
+    }
+
+    function build() {
+      el("presets").innerHTML = presets.map((preset, i) =>
+        `<button class="preset${i === 0 ? " active" : ""}" type="button" data-preset="${i}">${preset.name}</button>`
+      ).join("");
+      el("pads").innerHTML = notes.map((note, i) =>
+        `<button class="pad" type="button" data-pad="${i}" style="--pad-color:${note[2]}"><span class="note">${note[0]}</span><span class="freq">${Math.round(note[1])} Hz</span><span class="slot"></span></button>`
+      ).join("");
+
+      el("wakeBtn").addEventListener("click", wake);
+      el("recBtn").addEventListener("click", toggleRec);
+      el("playBtn").addEventListener("click", playRecording);
+      el("clearBtn").addEventListener("click", clearRecording);
+      el("exportBtn").addEventListener("click", exportPlac);
+      el("copyBtn").addEventListener("click", copyPlac);
+      el("presets").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-preset]");
+        if (button) applyPreset(Number(button.dataset.preset));
+      });
+      document.querySelectorAll(".pad").forEach((button, i) => addPadHandlers(button, i));
+      [sustainEl, cutoffEl, driveEl].forEach((input) => input.addEventListener("input", () => {
+        syncValues();
+        updatePlac(false);
+      }));
+      syncValues();
+      updatePlac();
+    }
+
+    build();
+  </script>
+</body>
+</html>
