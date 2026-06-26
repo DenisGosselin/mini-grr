@@ -17,6 +17,7 @@
       --black: #080909;
       --amber: #ffbd45;
       --orange: #e9692c;
+      --glow: rgba(255, 189, 69, .44);
       --red: #ef5048;
       --blue: #58b7ff;
       --green: #78d47a;
@@ -33,6 +34,7 @@
       background:
         linear-gradient(90deg, rgba(255,189,69,.04) 1px, transparent 1px) 0 0 / 18px 18px,
         radial-gradient(circle at 50% -10%, rgba(255,189,69,.16), transparent 38%),
+        radial-gradient(circle at 92% 12%, rgba(233,105,44,.12), transparent 24%),
         linear-gradient(135deg, #111414, #090a0a 62%, #15100d);
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
@@ -50,12 +52,24 @@
 
     .shell {
       border: 2px solid #070707;
-      border-radius: 12px;
+      border-radius: 16px;
       background:
-        linear-gradient(90deg, var(--wood), transparent 20px, transparent calc(100% - 20px), var(--wood)),
-        linear-gradient(180deg, #2a2e2d, var(--panel) 92%);
-      box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.08);
+        radial-gradient(circle at 28px 28px, rgba(255,189,69,.18) 0 2px, transparent 3px) 0 0 / 54px 54px,
+        linear-gradient(90deg, var(--wood), transparent 22px, transparent calc(100% - 22px), var(--wood)),
+        linear-gradient(180deg, #2c302f, #151817 48%, #101211 100%);
+      box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.09), inset 0 -18px 40px rgba(0,0,0,.18);
       padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .shell::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border: 1px solid rgba(255, 189, 69, .1);
+      border-radius: 12px;
+      pointer-events: none;
     }
 
     header {
@@ -86,6 +100,7 @@
         linear-gradient(145deg, #ffd474, var(--amber) 48%, var(--orange));
       box-shadow: inset 0 -9px rgba(0,0,0,.2), 0 8px 0 rgba(0,0,0,.28);
       flex: 0 0 auto;
+      animation: badgeBreathe 4.8s ease-in-out infinite;
     }
 
     h1 {
@@ -114,11 +129,28 @@
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: .08em;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.025);
+      position: relative;
+    }
+
+    .status::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 7px;
+      border-radius: 50%;
+      background: #4b4030;
+      box-shadow: 0 0 0 rgba(255,189,69,0);
     }
 
     .status.hot { color: #17110a; background: var(--amber); border-color: var(--amber); }
     .status.rec { color: #fff; background: var(--red); border-color: var(--red); }
     .status.play { color: #071018; background: var(--blue); border-color: var(--blue); }
+    .status.hot::before, .status.rec::before, .status.play::before {
+      background: #fff7c7;
+      animation: ledPulse 1.4s ease-in-out infinite;
+    }
 
     main {
       display: grid;
@@ -131,11 +163,12 @@
       gap: 10px;
       padding: 14px;
       border: 2px solid #070707;
-      border-radius: 10px;
+      border-radius: 12px;
       background:
+        radial-gradient(circle at 14% 50%, rgba(255,189,69,.18), transparent 34%),
         linear-gradient(90deg, rgba(255,189,69,.12), transparent 58%),
         #151817;
-      box-shadow: inset 0 1px rgba(255,255,255,.06);
+      box-shadow: inset 0 1px rgba(255,255,255,.06), 0 12px 24px rgba(0,0,0,.2);
     }
 
     .wake button {
@@ -147,7 +180,7 @@
       font-size: clamp(1rem, 4.5vw, 1.35rem);
       font-weight: 950;
       cursor: pointer;
-      box-shadow: inset 0 -6px rgba(0,0,0,.18), 0 8px 0 rgba(0,0,0,.28);
+      box-shadow: inset 0 -6px rgba(0,0,0,.18), 0 8px 0 rgba(0,0,0,.28), 0 0 22px rgba(255,189,69,.14);
       transition: transform .1s ease, box-shadow .1s ease, filter .1s ease;
     }
 
@@ -164,6 +197,10 @@
       box-shadow: inset 0 0 0 2px rgba(255,189,69,.16);
     }
 
+    .wake button.waking {
+      animation: wakeHalo 1.15s ease-out;
+    }
+
     .wake p {
       margin: 0;
       color: var(--muted);
@@ -178,8 +215,9 @@
 
     .module {
       border: 2px solid #070707;
-      border-radius: 10px;
+      border-radius: 12px;
       background:
+        radial-gradient(circle at 18px 18px, rgba(255,189,69,.1) 0 2px, transparent 3px),
         linear-gradient(180deg, rgba(255,255,255,.055), transparent 38%),
         var(--panel-hi);
       box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 24px rgba(0,0,0,.24);
@@ -211,6 +249,10 @@
       cursor: pointer;
       box-shadow: inset 0 -4px rgba(0,0,0,.22);
       transition: transform .1s ease, background .12s ease, border-color .12s ease;
+    }
+
+    .preset:active, .transport button:active, .exporter button:active {
+      transform: translateY(2px);
     }
 
     .preset.active {
@@ -256,7 +298,7 @@
       position: relative;
       min-height: 112px;
       border: 2px solid #050505;
-      border-radius: 10px;
+      border-radius: 12px;
       color: #111;
       background:
         linear-gradient(180deg, rgba(255,255,255,.42), transparent 40%),
@@ -265,7 +307,7 @@
       touch-action: none;
       user-select: none;
       -webkit-user-select: none;
-      box-shadow: inset 0 -11px rgba(0,0,0,.18), 0 10px 0 rgba(0,0,0,.28), 0 18px 22px rgba(0,0,0,.18);
+      box-shadow: inset 0 -11px rgba(0,0,0,.18), 0 10px 0 rgba(0,0,0,.28), 0 18px 22px rgba(0,0,0,.18), 0 0 0 rgba(255,189,69,0);
       transform-origin: center bottom;
       transition: transform .08s ease, box-shadow .08s ease, filter .08s ease;
       overflow: hidden;
@@ -275,6 +317,7 @@
       transform: translateY(7px) scale(1.016);
       box-shadow: inset 0 -5px rgba(0,0,0,.18), 0 3px 0 rgba(0,0,0,.28), 0 10px 16px rgba(0,0,0,.18);
       filter: brightness(1.08);
+      animation: padGlow .34s ease-out;
     }
 
     .pad .note {
@@ -386,6 +429,29 @@
       .pad { min-height: 140px; }
       .transport, .meters, .exporter { grid-column: 1 / -1; }
     }
+
+    @keyframes wakeHalo {
+      0% { box-shadow: inset 0 -6px rgba(0,0,0,.18), 0 8px 0 rgba(0,0,0,.28), 0 0 0 rgba(255,189,69,0); filter: brightness(1); }
+      28% { box-shadow: inset 0 -6px rgba(0,0,0,.18), 0 8px 0 rgba(0,0,0,.28), 0 0 34px var(--glow); filter: brightness(1.12); }
+      72% { box-shadow: inset 0 -6px rgba(0,0,0,.18), 0 8px 0 rgba(0,0,0,.28), 0 0 18px rgba(233,105,44,.3); filter: brightness(1.04); }
+      100% { box-shadow: inset 0 0 0 2px rgba(255,189,69,.16); filter: brightness(1); }
+    }
+
+    @keyframes padGlow {
+      0% { box-shadow: inset 0 -5px rgba(0,0,0,.18), 0 3px 0 rgba(0,0,0,.28), 0 0 0 rgba(255,189,69,0); }
+      50% { box-shadow: inset 0 -5px rgba(0,0,0,.18), 0 3px 0 rgba(0,0,0,.28), 0 0 22px rgba(255,189,69,.32); }
+      100% { box-shadow: inset 0 -5px rgba(0,0,0,.18), 0 3px 0 rgba(0,0,0,.28), 0 10px 16px rgba(0,0,0,.18); }
+    }
+
+    @keyframes ledPulse {
+      0%, 100% { box-shadow: 0 0 5px rgba(255,247,199,.25); }
+      50% { box-shadow: 0 0 14px rgba(255,247,199,.8); }
+    }
+
+    @keyframes badgeBreathe {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.06); }
+    }
   </style>
 </head>
 <body>
@@ -455,12 +521,12 @@
     ];
 
     const presets = [
-      { name: "Round", type: "sine", sustain: 520, cutoff: 900, drive: 18 },
-      { name: "Rubber", type: "triangle", sustain: 360, cutoff: 1150, drive: 34 },
-      { name: "Growl", type: "sawtooth", sustain: 460, cutoff: 720, drive: 58 },
-      { name: "Sub", type: "sine", sustain: 820, cutoff: 520, drive: 26 },
-      { name: "Pick", type: "square", sustain: 180, cutoff: 1800, drive: 44 },
-      { name: "Fuzz", type: "sawtooth", sustain: 620, cutoff: 1550, drive: 86 }
+      { name: "Baby Grr", type: "sine", sustain: 760, cutoff: 620, drive: 12, sub: .46, attack: .028, decay: .22, level: .48, release: .22, q: 4.2, env: 1.16, drift: 4, wobble: 0 },
+      { name: "Growl", type: "sawtooth", sustain: 560, cutoff: 820, drive: 48, sub: .34, attack: .014, decay: .2, level: .52, release: .18, q: 7.4, env: 1.55, drift: 7, wobble: .18 },
+      { name: "Fuzz", type: "sawtooth", sustain: 430, cutoff: 1380, drive: 72, sub: .24, attack: .009, decay: .13, level: .42, release: .13, q: 5.8, env: 1.28, drift: 10, wobble: .08 },
+      { name: "Rubber", type: "triangle", sustain: 620, cutoff: 760, drive: 24, sub: .39, attack: .045, decay: .34, level: .5, release: .24, q: 6.6, env: 1.42, drift: 5, wobble: .1, bounce: true },
+      { name: "Alien", type: "triangle", sustain: 700, cutoff: 980, drive: 30, sub: .29, attack: .025, decay: .28, level: .44, release: .26, q: 8.6, env: 1.72, drift: 13, wobble: .42, lfoRate: 4.2, lfoDepth: 18 },
+      { name: "Slurp", type: "sawtooth", sustain: 680, cutoff: 1040, drive: 42, sub: .32, attack: .018, decay: .42, level: .46, release: .22, q: 9.2, env: 2.05, drift: 8, wobble: .2, slurp: true }
     ];
 
     const state = {
@@ -477,7 +543,8 @@
       activeVoices: new Map(),
       activeRecords: new Map(),
       lastPlac: "",
-      audioFailed: false
+      audioFailed: false,
+      compressor: null
     };
 
     const el = (id) => document.getElementById(id);
@@ -501,10 +568,17 @@
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         state.audio = new AudioContext();
         state.master = state.audio.createGain();
+        state.compressor = state.audio.createDynamicsCompressor();
         state.analyser = state.audio.createAnalyser();
         state.master.gain.value = 0.78;
+        state.compressor.threshold.value = -18;
+        state.compressor.knee.value = 18;
+        state.compressor.ratio.value = 2.4;
+        state.compressor.attack.value = .018;
+        state.compressor.release.value = .18;
         state.analyser.fftSize = 256;
-        state.master.connect(state.analyser);
+        state.master.connect(state.compressor);
+        state.compressor.connect(state.analyser);
         state.analyser.connect(state.audio.destination);
         drawScope();
         return true;
@@ -525,12 +599,17 @@
 
     function wake() {
       const wakeBtn = el("wakeBtn");
+      const firstWake = !state.wakePlayed;
       wakeBtn.textContent = "🐻 Grr Awake";
       wakeBtn.classList.add("awake");
+      if (firstWake) {
+        state.wakePlayed = true;
+        wakeBtn.classList.add("waking");
+        window.setTimeout(() => wakeBtn.classList.remove("waking"), 1200);
+      }
       if (!state.recording && !state.playing) setStatus("awake", "hot");
       return resumeAudio().then((ok) => {
-        if (ok && !state.wakePlayed) {
-          state.wakePlayed = true;
+        if (ok && firstWake) {
           wakeGrowl();
         }
         return ok;
@@ -542,50 +621,74 @@
       const now = state.audio.currentTime;
       const oscA = state.audio.createOscillator();
       const oscB = state.audio.createOscillator();
+      const low = state.audio.createOscillator();
       const filter = state.audio.createBiquadFilter();
       const shaper = state.audio.createWaveShaper();
       const gain = state.audio.createGain();
-      const tail = state.audio.createOscillator();
-      const tailGain = state.audio.createGain();
+      const lowGain = state.audio.createGain();
+      const panA = state.audio.createStereoPanner ? state.audio.createStereoPanner() : null;
+      const panB = state.audio.createStereoPanner ? state.audio.createStereoPanner() : null;
 
       oscA.type = "sawtooth";
       oscB.type = "triangle";
-      tail.type = "sine";
-      oscA.detune.setValueAtTime(-9, now);
-      oscB.detune.setValueAtTime(11, now);
-      oscA.frequency.setValueAtTime(210, now);
-      oscB.frequency.setValueAtTime(216, now);
-      oscA.frequency.exponentialRampToValueAtTime(54, now + .78);
-      oscB.frequency.exponentialRampToValueAtTime(49, now + .84);
-      tail.frequency.setValueAtTime(52, now + .48);
-      tail.frequency.exponentialRampToValueAtTime(30, now + 1.08);
+      low.type = "sine";
+      oscA.detune.setValueAtTime(-8, now);
+      oscB.detune.setValueAtTime(10, now);
+      oscA.frequency.setValueAtTime(230, now);
+      oscB.frequency.setValueAtTime(236, now);
+      low.frequency.setValueAtTime(58, now);
+      oscA.frequency.exponentialRampToValueAtTime(58, now + .72);
+      oscB.frequency.exponentialRampToValueAtTime(52, now + .74);
+      low.frequency.exponentialRampToValueAtTime(33, now + .82);
+      oscA.frequency.setValueAtTime(46, now + .94);
+      oscB.frequency.setValueAtTime(43, now + .94);
+      low.frequency.setValueAtTime(36, now + .94);
+      oscA.frequency.exponentialRampToValueAtTime(31, now + 1.22);
+      oscB.frequency.exponentialRampToValueAtTime(29, now + 1.22);
+      low.frequency.exponentialRampToValueAtTime(27, now + 1.22);
 
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(320, now);
-      filter.frequency.exponentialRampToValueAtTime(2800, now + .18);
-      filter.frequency.exponentialRampToValueAtTime(190, now + .96);
-      filter.Q.setValueAtTime(9, now);
-      shaper.curve = driveCurve(.38);
+      filter.frequency.setValueAtTime(260, now);
+      filter.frequency.exponentialRampToValueAtTime(3200, now + .16);
+      filter.frequency.exponentialRampToValueAtTime(180, now + .74);
+      filter.frequency.setValueAtTime(150, now + .94);
+      filter.frequency.exponentialRampToValueAtTime(520, now + 1.02);
+      filter.frequency.exponentialRampToValueAtTime(130, now + 1.24);
+      filter.Q.setValueAtTime(10, now);
+      shaper.curve = driveCurve(.44);
       shaper.oversample = "2x";
 
       gain.gain.setValueAtTime(.001, now);
-      gain.gain.exponentialRampToValueAtTime(.82, now + .04);
-      gain.gain.setValueAtTime(.7, now + .28);
-      gain.gain.exponentialRampToValueAtTime(.001, now + 1.08);
-      tailGain.gain.setValueAtTime(.001, now + .46);
-      tailGain.gain.exponentialRampToValueAtTime(.36, now + .58);
-      tailGain.gain.exponentialRampToValueAtTime(.001, now + 1.16);
+      gain.gain.exponentialRampToValueAtTime(.86, now + .045);
+      gain.gain.setValueAtTime(.68, now + .22);
+      gain.gain.exponentialRampToValueAtTime(.001, now + .76);
+      gain.gain.setValueAtTime(.001, now + .96);
+      gain.gain.exponentialRampToValueAtTime(.38, now + 1.02);
+      gain.gain.exponentialRampToValueAtTime(.001, now + 1.27);
+      lowGain.gain.setValueAtTime(.001, now);
+      lowGain.gain.exponentialRampToValueAtTime(.22, now + .08);
+      lowGain.gain.exponentialRampToValueAtTime(.001, now + .78);
+      lowGain.gain.setValueAtTime(.001, now + .95);
+      lowGain.gain.exponentialRampToValueAtTime(.3, now + 1.03);
+      lowGain.gain.exponentialRampToValueAtTime(.001, now + 1.3);
 
-      oscA.connect(shaper);
-      oscB.connect(shaper);
+      if (panA && panB) {
+        panA.pan.value = -.22;
+        panB.pan.value = .22;
+        oscA.connect(panA).connect(shaper);
+        oscB.connect(panB).connect(shaper);
+      } else {
+        oscA.connect(shaper);
+        oscB.connect(shaper);
+      }
       shaper.connect(filter).connect(gain).connect(state.master);
-      tail.connect(tailGain).connect(state.master);
+      low.connect(lowGain).connect(state.master);
       oscA.start(now);
       oscB.start(now);
-      tail.start(now + .46);
-      oscA.stop(now + 1.12);
-      oscB.stop(now + 1.12);
-      tail.stop(now + 1.18);
+      low.start(now);
+      oscA.stop(now + 1.3);
+      oscB.stop(now + 1.3);
+      low.stop(now + 1.32);
     }
 
     function startPad(index, key, fromPlayback = false, duration = 0) {
@@ -622,34 +725,67 @@
       const note = notes[index];
       const preset = presets[state.presetIndex];
       const now = state.audio.currentTime;
-      const amount = Number(driveEl.value) / 100;
+      const analog = (Math.random() - .5);
+      const amount = Math.min(.92, (Number(driveEl.value) / 100) * .72 + preset.drive / 220);
       const filterMax = Number(cutoffEl.value);
       const osc = state.audio.createOscillator();
       const sub = state.audio.createOscillator();
+      const oscGain = state.audio.createGain();
+      const subGain = state.audio.createGain();
       const shaper = state.audio.createWaveShaper();
       const filter = state.audio.createBiquadFilter();
       const gain = state.audio.createGain();
+      const needsLfo = !!(preset.lfoRate || preset.wobble);
+      const lfo = needsLfo ? state.audio.createOscillator() : null;
+      const lfoGain = needsLfo ? state.audio.createGain() : null;
+      const baseFreq = note[1] * (1 + analog * .0025);
+      const envTop = Math.min(5000, Math.max(260, filterMax * preset.env + analog * 65));
+      const envBase = Math.max(90, filterMax * (.42 + preset.wobble * .18));
+      const attack = preset.attack * (1 + analog * .18);
+      const decay = preset.decay * (1 + Math.random() * .16);
+      const sustainLevel = Math.max(.26, Math.min(.68, preset.level + analog * .025));
 
       osc.type = preset.type;
       sub.type = "sine";
-      osc.frequency.value = note[1];
-      sub.frequency.value = note[1] / 2;
+      osc.frequency.setValueAtTime(baseFreq, now);
+      sub.frequency.setValueAtTime(baseFreq / 2, now);
+      osc.detune.setValueAtTime(analog * preset.drift, now);
+      sub.detune.setValueAtTime(-analog * preset.drift * .5, now);
+      if (preset.bounce) {
+        osc.detune.setValueAtTime(18 + analog * 4, now);
+        osc.detune.linearRampToValueAtTime(analog * 2, now + .09);
+      }
       shaper.curve = driveCurve(amount);
       shaper.oversample = "2x";
+      oscGain.gain.value = .72;
+      subGain.gain.value = preset.sub;
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(Math.min(filterMax * 1.8, 5000), now);
-      filter.frequency.exponentialRampToValueAtTime(Math.max(120, filterMax), now + .12);
-      filter.Q.value = 6 + amount * 9;
+      filter.frequency.setValueAtTime(preset.slurp ? envBase : envTop, now);
+      if (preset.slurp) {
+        filter.frequency.exponentialRampToValueAtTime(envTop, now + .11);
+        filter.frequency.exponentialRampToValueAtTime(Math.max(110, envBase * .64), now + .48);
+      } else {
+        filter.frequency.exponentialRampToValueAtTime(Math.max(120, envBase), now + decay);
+      }
+      filter.Q.value = preset.q + amount * 3.5 + Math.random() * .5;
       gain.gain.setValueAtTime(.001, now);
-      gain.gain.exponentialRampToValueAtTime(.82, now + .018);
-      gain.gain.exponentialRampToValueAtTime(.42, now + .18);
+      gain.gain.exponentialRampToValueAtTime(.82, now + attack);
+      gain.gain.exponentialRampToValueAtTime(sustainLevel, now + attack + decay);
 
-      osc.connect(shaper);
-      sub.connect(shaper);
+      if (needsLfo) {
+        lfo.type = "sine";
+        lfo.frequency.value = preset.lfoRate || (2.1 + preset.wobble * 3);
+        lfoGain.gain.value = preset.lfoDepth || (preset.wobble * 80);
+        lfo.connect(lfoGain).connect(filter.frequency);
+        lfo.start(now);
+      }
+
+      osc.connect(oscGain).connect(shaper);
+      sub.connect(subGain).connect(shaper);
       shaper.connect(filter).connect(gain).connect(state.master);
       osc.start(now);
       sub.start(now);
-      return { osc, sub, gain, filter, index, stopped: false };
+      return { osc, sub, gain, filter, lfo, index, stopped: false, release: preset.release };
     }
 
     function stopPad(index, key, fromPlayback = false) {
@@ -657,13 +793,14 @@
       const voice = state.activeVoices.get(key);
       if (voice && !voice.stopped && state.audio) {
         const now = state.audio.currentTime;
-        const release = Math.max(.07, Math.min(.38, Number(sustainEl.value) / 4200));
+        const release = Math.max(.07, Math.min(.46, voice.release + Number(sustainEl.value) / 9000));
         voice.stopped = true;
         voice.gain.gain.cancelScheduledValues(now);
         voice.gain.gain.setTargetAtTime(.001, now, release / 3);
         try {
           voice.osc.stop(now + release + .06);
           voice.sub.stop(now + release + .06);
+          if (voice.lfo) voice.lfo.stop(now + release + .06);
         } catch (error) {}
         state.activeVoices.delete(key);
       }
