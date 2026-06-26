@@ -525,7 +525,7 @@
       { name: "Growl", type: "sawtooth", sustain: 560, cutoff: 820, drive: 48, sub: .34, attack: .014, decay: .2, level: .52, release: .18, q: 7.4, env: 1.55, drift: 7, wobble: .18 },
       { name: "Fuzz", type: "sawtooth", sustain: 430, cutoff: 1380, drive: 72, sub: .24, attack: .009, decay: .13, level: .42, release: .13, q: 5.8, env: 1.28, drift: 10, wobble: .08 },
       { name: "Rubber", type: "triangle", sustain: 620, cutoff: 760, drive: 24, sub: .39, attack: .045, decay: .34, level: .5, release: .24, q: 6.6, env: 1.42, drift: 5, wobble: .1, bounce: true },
-      { name: "Alien", type: "triangle", sustain: 700, cutoff: 980, drive: 30, sub: .29, attack: .025, decay: .28, level: .44, release: .26, q: 8.6, env: 1.72, drift: 13, wobble: .42, lfoRate: 4.2, lfoDepth: 18 },
+      { name: "Alien", type: "triangle", sustain: 700, cutoff: 980, drive: 30, sub: .29, attack: .025, decay: .28, level: .44, release: .26, q: 8.6, env: 1.72, drift: 13, wobble: .42, lfoRate: 2.6, lfoDepth: 12, alien: true },
       { name: "Slurp", type: "sawtooth", sustain: 680, cutoff: 1040, drive: 42, sub: .32, attack: .018, decay: .42, level: .46, release: .22, q: 9.2, env: 2.05, drift: 8, wobble: .2, slurp: true }
     ];
 
@@ -738,10 +738,12 @@
       const needsLfo = !!(preset.lfoRate || preset.wobble);
       const lfo = needsLfo ? state.audio.createOscillator() : null;
       const lfoGain = needsLfo ? state.audio.createGain() : null;
+      const detuneLfo = preset.alien ? state.audio.createOscillator() : null;
+      const detuneLfoGain = preset.alien ? state.audio.createGain() : null;
       const baseFreq = note[1] * (1 + analog * .0025);
       const envTop = Math.min(5000, Math.max(260, filterMax * preset.env + analog * 65));
       const envBase = Math.max(90, filterMax * (.42 + preset.wobble * .18));
-      const attack = preset.attack * (1 + analog * .18);
+      const attack = Math.max(.008, preset.attack * (1 + analog * .18));
       const decay = preset.decay * (1 + Math.random() * .16);
       const sustainLevel = Math.max(.26, Math.min(.68, preset.level + analog * .025));
 
@@ -757,19 +759,25 @@
       }
       shaper.curve = driveCurve(amount);
       shaper.oversample = "2x";
-      oscGain.gain.value = .72;
-      subGain.gain.value = preset.sub;
+      oscGain.gain.setValueAtTime(.0001, now);
+      subGain.gain.setValueAtTime(.0001, now);
+      oscGain.gain.linearRampToValueAtTime(.72, now + attack);
+      subGain.gain.linearRampToValueAtTime(preset.sub, now + attack * 1.6);
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(preset.slurp ? envBase : envTop, now);
+      filter.frequency.setValueAtTime(Math.max(90, preset.slurp ? envBase : envTop * .92), now);
       if (preset.slurp) {
         filter.frequency.exponentialRampToValueAtTime(envTop, now + .11);
         filter.frequency.exponentialRampToValueAtTime(Math.max(110, envBase * .64), now + .48);
+      } else if (preset.alien) {
+        filter.frequency.exponentialRampToValueAtTime(Math.max(120, envBase), now + decay);
+        filter.frequency.linearRampToValueAtTime(Math.min(3600, envTop * 1.55), now + 3.2);
+        filter.frequency.linearRampToValueAtTime(Math.max(180, envBase * 1.08), now + 4.2);
       } else {
         filter.frequency.exponentialRampToValueAtTime(Math.max(120, envBase), now + decay);
       }
       filter.Q.value = preset.q + amount * 3.5 + Math.random() * .5;
-      gain.gain.setValueAtTime(.001, now);
-      gain.gain.exponentialRampToValueAtTime(.82, now + attack);
+      gain.gain.setValueAtTime(.0001, now);
+      gain.gain.linearRampToValueAtTime(.82, now + attack);
       gain.gain.exponentialRampToValueAtTime(sustainLevel, now + attack + decay);
 
       if (needsLfo) {
@@ -779,13 +787,27 @@
         lfo.connect(lfoGain).connect(filter.frequency);
         lfo.start(now);
       }
+      if (preset.alien) {
+        detuneLfo.type = "sine";
+        detuneLfo.frequency.setValueAtTime(.18, now);
+        detuneLfo.frequency.linearRampToValueAtTime(.72, now + 3.4);
+        detuneLfoGain.gain.setValueAtTime(.001, now);
+        detuneLfoGain.gain.linearRampToValueAtTime(10, now + 2.2);
+        detuneLfoGain.gain.linearRampToValueAtTime(18, now + 4);
+        detuneLfo.connect(detuneLfoGain);
+        detuneLfoGain.connect(osc.detune);
+        detuneLfoGain.connect(sub.detune);
+        detuneLfo.start(now);
+        osc.detune.linearRampToValueAtTime(analog * preset.drift + 9, now + 3.5);
+        sub.detune.linearRampToValueAtTime(-analog * preset.drift * .5 - 7, now + 3.5);
+      }
 
       osc.connect(oscGain).connect(shaper);
       sub.connect(subGain).connect(shaper);
       shaper.connect(filter).connect(gain).connect(state.master);
       osc.start(now);
       sub.start(now);
-      return { osc, sub, gain, filter, lfo, index, stopped: false, release: preset.release };
+      return { osc, sub, gain, filter, lfo, detuneLfo, oscGain, subGain, index, stopped: false, release: preset.release };
     }
 
     function stopPad(index, key, fromPlayback = false) {
@@ -795,12 +817,24 @@
         const now = state.audio.currentTime;
         const release = Math.max(.07, Math.min(.46, voice.release + Number(sustainEl.value) / 9000));
         voice.stopped = true;
-        voice.gain.gain.cancelScheduledValues(now);
-        voice.gain.gain.setTargetAtTime(.001, now, release / 3);
+        if (voice.gain.gain.cancelAndHoldAtTime) {
+          voice.gain.gain.cancelAndHoldAtTime(now);
+        } else {
+          const heldGain = Math.max(.0001, voice.gain.gain.value || .28);
+          voice.gain.gain.cancelScheduledValues(now);
+          voice.gain.gain.setValueAtTime(heldGain, now);
+        }
+        if (voice.filter && voice.filter.frequency.cancelAndHoldAtTime) {
+          voice.filter.frequency.cancelAndHoldAtTime(now);
+        }
+        if (voice.oscGain) voice.oscGain.gain.setTargetAtTime(.0001, now, release / 4);
+        if (voice.subGain) voice.subGain.gain.setTargetAtTime(.0001, now, release / 4);
+        voice.gain.gain.setTargetAtTime(.0001, now, release / 2.6);
         try {
           voice.osc.stop(now + release + .06);
           voice.sub.stop(now + release + .06);
           if (voice.lfo) voice.lfo.stop(now + release + .06);
+          if (voice.detuneLfo) voice.detuneLfo.stop(now + release + .06);
         } catch (error) {}
         state.activeVoices.delete(key);
       }
